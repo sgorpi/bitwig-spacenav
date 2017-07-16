@@ -65,25 +65,15 @@ JNIEXPORT void JNICALL Java_net_sf_spacenav_SpaceNav_sensitivity(JNIEnv *env,
 }
 
 
-JNIEXPORT jobject JNICALL Java_net_sf_spacenav_SpaceNav_wait_1event(JNIEnv *env, jobject obj) {
-
+jobject handle_spnav_event(JNIEnv *env, spnav_event* e) {
   jclass eventClass;
   jmethodID cid;
   jstring result;
 
-  spnav_event e;
-  struct spnav_event_motion *me=&e.motion;
-  struct spnav_event_button *be=&e.button;
+  struct spnav_event_motion *me = &e->motion;
+  struct spnav_event_button *be = &e->button;
 
-  debug_print("Java_SpaceNav_wait_1event called");
-
-  if(spnav_wait_event(&e)==0) {
-    debug_print("spnav_wait_event() failed");
-    return NULL;
-  }
-
-
-  if(e.type == SPNAV_EVENT_MOTION) {
+  if(e->type == SPNAV_EVENT_MOTION) {
 
     eventClass = (*env)->FindClass(env, "net/sf/spacenav/SpaceNavMotionEvent");
     if (eventClass == NULL) {
@@ -106,30 +96,66 @@ JNIEXPORT jobject JNICALL Java_net_sf_spacenav_SpaceNav_wait_1event(JNIEnv *env,
 
 
   }
-  else if(e.type == SPNAV_EVENT_BUTTON) {
+  else if(e->type == SPNAV_EVENT_BUTTON) {
 
     eventClass = (*env)->FindClass(env, "net/sf/spacenav/SpaceNavButtonEvent");
     if (eventClass == NULL) {
       return NULL; /* exception thrown */
     }
 
-    cid = (*env)->GetMethodID(env, eventClass,
-	"<init>", "(IZ)V");
+    cid = (*env)->GetMethodID(env, eventClass, "<init>", "(IZ)V");
     if (cid == NULL) {
       return NULL; /* exception thrown */
     }
 
     /* Construct a new object */
-    result = (*env)->NewObject(env, eventClass, cid,
-	(jint)be->bnum, (jint)be->press);
+    result = (*env)->NewObject(env, eventClass, cid, (jint)be->bnum, (jint)be->press);
     /* Free local references */
     (*env)->DeleteLocalRef(env, eventClass);
     return result;
   }
   else {
-    debug_printf("Unknown event-type: %d", e.type);
+    debug_printf("Unknown event-type: %d", e->type);
   }
 
+  return NULL;
+}
+
+
+JNIEXPORT jobject JNICALL Java_net_sf_spacenav_SpaceNav_poll_1event(JNIEnv *env, jobject obj) {
+  spnav_event e;
+
+  debug_print("Java_SpaceNav_poll_1event called");
+
+  if(spnav_poll_event(&e) == 0) {
+    debug_print("spnav_poll_event() returned no events");
+    return NULL;
+  }
+  
+  jobject retObj = handle_spnav_event(env, &e);
+  
+  if (e.type == SPNAV_EVENT_MOTION) {
+	spnav_remove_events(SPNAV_EVENT_MOTION);
+  }
+
+  debug_print("Java_SpaceNav_poll_1event returning");
+  return retObj;
+}
+
+
+JNIEXPORT jobject JNICALL Java_net_sf_spacenav_SpaceNav_wait_1event(JNIEnv *env, jobject obj) {
+  spnav_event e;
+
+  debug_print("Java_SpaceNav_wait_1event called");
+
+  if(spnav_wait_event(&e)==0) {
+    debug_print("spnav_wait_event() failed");
+    return NULL;
+  }
+
+  jobject retObj = handle_spnav_event(env, &e);
+
   debug_print("Java_SpaceNav_wait_1event returning");
+  return retObj;
 }
 

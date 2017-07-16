@@ -6,27 +6,31 @@ import com.bitwig.extension.controller.ControllerExtension;
 
 import net.sf.spacenav.*;
 
-
 import java.util.Map;
 
 
 public class SpaceNavCtrlExtension extends ControllerExtension
 {
-	SpaceNavCtrlThread spaceNavThread;
+	SpaceNavCtrlRunner spaceNavCtrlRunner;
+	Thread spaceNavCtrlThread;
+
 
 	protected SpaceNavCtrlExtension(final SpaceNavCtrlExtensionDefinition definition, final ControllerHost host)
 	{
 		super(definition, host);
 	}
 	
+
 	@Override
 	public void init()
 	{
 		final ControllerHost host = getHost();
 
 		try {
-			spaceNavThread = new SpaceNavCtrlThread(host);
-			spaceNavThread.start();
+			spaceNavCtrlRunner = new SpaceNavCtrlRunner(host);
+			spaceNavCtrlThread = new Thread(spaceNavCtrlRunner);
+			spaceNavCtrlThread.start();
+			
 		} catch(Exception any) {
 		 	String javaLibPath = System.getProperty("java.library.path");
 			System.out.println("Put libspnav_jni.so in one of the following paths:");
@@ -34,15 +38,18 @@ public class SpaceNavCtrlExtension extends ControllerExtension
 		}
 	}
 
+
 	@Override
 	public void exit()
 	{
-		spaceNavThread.terminate();
+		spaceNavCtrlThread.interrupt();
 		try {
-			spaceNavThread.join();
+			spaceNavCtrlThread.join();
 		} catch(InterruptedException intrEx) {
+			System.out.println("SpaceNavCtrl couldn't join");
 		}
 	}
+
 
 	@Override
 	public void flush()

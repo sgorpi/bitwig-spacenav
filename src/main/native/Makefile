@@ -1,7 +1,7 @@
 JNI_NAME = SpaceNav
 JAVA_HOME = /usr/lib/jvm/default-java
 
-SPNAV_CFLAGS = -I../libspnav/
+SPNAV_CFLAGS = -Wall
 SPNAV_LDFLAGS = -lspnav -lX11
 
 
@@ -34,6 +34,9 @@ $(NATIVE_LIB):	$(JNI_HEADER) $(JNI_NAME).c
 	    -fPIC \
 	    -o ../../../target/classes/$@ $(JNI_NAME).c \
 	    $(SPNAV_LDFLAGS)
+	@echo ""
+	@echo "* Please copy target/classes/$@ to a LD_LIBRARY_PATH, e.g. /usr/lib"
+	@echo ""
 
 
 .PHONY:	clean testjava documentation

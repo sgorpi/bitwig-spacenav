@@ -40,6 +40,7 @@ public class SpaceNav {
   private native void close();
   private native void sensitivity(double sens);
   private native SpaceNavEvent wait_event();
+  private native SpaceNavEvent poll_event();
 
   static {
     System.loadLibrary("spnav_jni");
@@ -82,4 +83,7 @@ public class SpaceNav {
     return wait_event();
   }
 
+  public SpaceNavEvent pollForEvent() {
+  	return poll_event();
+  }
 }
